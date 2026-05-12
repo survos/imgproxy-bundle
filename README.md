@@ -72,6 +72,48 @@ The `imgproxy` filter is registered automatically — no extra config needed.
 {{ image.sourceUrl | imgproxy('large', 'webp') }}
 ```
 
+## Stimulus controller
+
+For public source URLs, the bundle includes a Stimulus controller that can
+rewrite rendered image tags in the browser. This is useful for Meilisearch and
+DataTables renderers where storing or precomputing thumbnail URLs would add
+noise.
+
+```twig
+{% set _sc = '@survos/imgproxy-bundle/imgproxy' %}
+{% set host = imgproxy_host %}
+
+<div {{ stimulus_controller(_sc, {
+    host: host,
+    preset: 'thumb'
+}) }}>
+    <img
+        {{ stimulus_target(_sc, 'image') }}
+        data-imgproxy-url="https://images.example.org/full-size.jpg"
+        data-imgproxy-preset="ai"
+        alt=""
+    >
+</div>
+```
+
+When an `image` target is connected, the controller sets `src` to an unsigned
+imgproxy URL such as `/insecure/rs:fit:512:512:0/plain/...@jpg` and marks the
+element with `data-imgproxy-done="1"`. You may also put the full public URL in
+`src`, `data-src`, or `data-url`; `data-imgproxy-url` is preferred because it
+avoids the browser starting a full-size image request before Stimulus connects.
+
+Per-image attributes:
+
+| Attribute | Purpose |
+|-----------|---------|
+| `data-imgproxy-url` | Full public source URL to proxy |
+| `data-imgproxy-preset` | Preset name, default `thumb` |
+| `data-imgproxy-format` | Output format, default `jpg` |
+| `data-imgproxy-host` | Override the wrapper host value |
+
+Signed/private URLs should use a server endpoint instead of this public
+controller path, because signing requires the secret key and salt.
+
 ## AiThumbnailProviderInterface
 
 Implement this interface on entities that can provide their own low-resolution URL for AI vision tasks. When present, the AI workflow uses `getAiSmallUrl()` instead of the full-resolution source — avoiding unnecessary costs on large images.

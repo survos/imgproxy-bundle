@@ -1,0 +1,25 @@
+{
+  "name": "@survos/imgproxy-bundle",
+  "description": "Stimulus helpers for survos/imgproxy-bundle",
+  "license": "MIT",
+  "version": "1.0.0",
+  "symfony": {
+    "controllers": {
+      "imgproxy": {
+        "name": "survos/imgproxy-bundle/imgproxy",
+        "main": "controllers/imgproxy_controller.js",
+        "webpackMode": "eager",
+        "fetch": "lazy",
+        "enabled": true,
+        "autoimport": {}
+      }
+    }
+  },
+  "peerDependencies": {
+    "@hotwired/stimulus": "^3.2.0"
+  },
+  "devDependencies": {
+    "@hotwired/stimulus": "^3.2.2"
+  }
+}
+

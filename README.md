@@ -61,6 +61,17 @@ class MyService
 }
 ```
 
+## Twig filter
+
+The `imgproxy` filter is registered automatically — no extra config needed.
+
+```twig
+{# preset (default: thumb) #}
+{{ image.sourceUrl | imgproxy }}
+{{ image.sourceUrl | imgproxy('ai') }}
+{{ image.sourceUrl | imgproxy('large', 'webp') }}
+```
+
 ## AiThumbnailProviderInterface
 
 Implement this interface on entities that can provide their own low-resolution URL for AI vision tasks. When present, the AI workflow uses `getAiSmallUrl()` instead of the full-resolution source — avoiding unnecessary costs on large images.

@@ -6,6 +6,7 @@ namespace Survos\ImgproxyBundle\Service;
 
 use InvalidArgumentException;
 use Survos\ImgproxyBundle\SurvosImgproxyBundle;
+use Twig\Attribute\AsTwigFilter;
 
 final class ImgproxyUrlBuilder
 {
@@ -24,8 +25,8 @@ final class ImgproxyUrlBuilder
         string $resizeType = 'fit',
         string $format = 'jpg',
     ): string {
-        if (!$this->host) {
-            return $url;
+        if (!$this->host || $this->host === '') {
+            throw new \RuntimeException('imgproxy host is not configured. Set the IMGPROXY_HOST environment variable.');
         }
 
         $encodedUrl = strtr($url, ['&' => '%26', '=' => '%3D', '?' => '%3F', '@' => '%40']);
@@ -35,6 +36,7 @@ final class ImgproxyUrlBuilder
         return rtrim($this->host, '/') . '/' . $this->sign($path) . $path;
     }
 
+    #[AsTwigFilter('imgproxy')]
     public function resizePreset(string $url, string $preset = 'thumb', string $format = 'jpg'): string
     {
         if (!isset($this->presets[$preset])) {
@@ -54,6 +56,22 @@ final class ImgproxyUrlBuilder
     public function aiThumbnail(string $url): string
     {
         return $this->resizePreset($url, 'ai');
+    }
+
+    /**
+     * Build a signed URL with an arbitrary imgproxy processing string, e.g. "rs:fit:1200:0/f:webp".
+     * Use this when the preset/resize helpers don't cover your needs.
+     */
+    public function buildUrl(string $url, string $processing): string
+    {
+        if (!$this->host || $this->host === '') {
+            throw new \RuntimeException('imgproxy host is not configured. Set the IMGPROXY_HOST environment variable.');
+        }
+
+        $encodedUrl = strtr($url, ['&' => '%26', '=' => '%3D', '?' => '%3F', '@' => '%40']);
+        $path = sprintf('/%s/plain/%s', trim($processing, '/'), $encodedUrl);
+
+        return rtrim($this->host, '/') . '/' . $this->sign($path) . $path;
     }
 
     public function hasPreset(string $preset): bool

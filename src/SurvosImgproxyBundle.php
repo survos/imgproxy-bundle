@@ -25,7 +25,7 @@ class SurvosImgproxyBundle extends AbstractBundle
     {
         $definition->rootNode()
             ->children()
-                ->scalarNode('host')->defaultNull()->end()
+                ->scalarNode('host')->defaultValue('%env(default::IMGPROXY_HOST)%')->end()
                 ->scalarNode('key')->defaultValue('%env(default::IMGPROXY_KEY)%')->end()
                 ->scalarNode('salt')->defaultValue('%env(default::IMGPROXY_SALT)%')->end()
                 ->arrayNode('presets')
@@ -50,10 +50,12 @@ class SurvosImgproxyBundle extends AbstractBundle
             ->arg('$key', $config['key'])
             ->arg('$salt', $config['salt'])
             ->arg('$presets', $config['presets'])
-            ->public();
+            ->public()
+            ->autoconfigure();
 
         $container->services()
             ->set(ImgproxyUrlCommand::class)
+            ->autowire()
             ->autoconfigure();
     }
 }

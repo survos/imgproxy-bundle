@@ -1,0 +1,8 @@
+<bg=green;fg=white>                </>
+<bg=green;fg=white> success        </>
+<bg=green;fg=white>                </>
+
+  * <fg=yellow>Next steps:</>
+    1. Set IMGPROXY_HOST, IMGPROXY_KEY, and IMGPROXY_SALT in your .env.local
+    2. Generate a key/salt pair: openssl rand -hex 32 (run twice)
+    3. See https://github.com/survos/imgproxy-bundle for full configuration

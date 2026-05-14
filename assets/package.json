@@ -1,12 +1,15 @@
 {
-  "name": "@survos/imgproxy-bundle",
+  "name": "@survos/imgproxy",
   "description": "Stimulus helpers for survos/imgproxy-bundle",
+  "keywords": [
+    "symfony-ux"
+  ],
   "license": "MIT",
   "version": "1.0.0",
   "symfony": {
     "controllers": {
       "imgproxy": {
-        "name": "survos/imgproxy-bundle/imgproxy",
+        "name": "survos/imgproxy/imgproxy",
         "main": "controllers/imgproxy_controller.js",
         "webpackMode": "eager",
         "fetch": "lazy",
@@ -22,4 +25,3 @@
     "@hotwired/stimulus": "^3.2.2"
   }
 }
-

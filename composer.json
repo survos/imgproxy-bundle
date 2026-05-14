@@ -3,7 +3,7 @@
     "description": "Symfony bundle for signing and generating imgproxy URLs",
     "type": "symfony-bundle",
     "license": "MIT",
-    "keywords": ["symfony", "imgproxy", "image", "resize", "thumbnail"],
+    "keywords": ["symfony", "symfony-ux", "ux", "imgproxy", "image", "resize", "thumbnail"],
     "autoload": {
         "psr-4": {
             "Survos\\ImgproxyBundle\\": "src/"
@@ -20,6 +20,7 @@
         "symfony/console": "^8.0",
         "symfony/dependency-injection": "^8.0",
         "symfony/http-kernel": "^8.0",
+        "survos/core-bundle": "^2.0",
         "twig/twig": "^3.14"
     },
     "require-dev": {

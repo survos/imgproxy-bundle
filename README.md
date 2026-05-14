@@ -80,7 +80,7 @@ DataTables renderers where storing or precomputing thumbnail URLs would add
 noise.
 
 ```twig
-{% set _sc = '@survos/imgproxy-bundle/imgproxy' %}
+{% set _sc = '@survos/imgproxy/imgproxy' %}
 {% set host = imgproxy_host %}
 
 <div {{ stimulus_controller(_sc, {

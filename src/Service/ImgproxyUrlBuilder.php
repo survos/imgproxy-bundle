@@ -11,7 +11,7 @@ use Twig\Attribute\AsTwigFilter;
 final class ImgproxyUrlBuilder
 {
     public function __construct(
-        private readonly ?string $host = null,
+        public readonly ?string $host = null,
         private readonly ?string $key = null,
         private readonly ?string $salt = null,
         private readonly array $presets = SurvosImgproxyBundle::DEFAULT_PRESETS,
@@ -55,7 +55,34 @@ final class ImgproxyUrlBuilder
 
     public function aiThumbnail(string $url): string
     {
-        return $this->resizePreset($url, 'ai');
+        return $this->resizePreset($url, 'ai_thumbnail');
+    }
+
+    public function aiHires(string $url): string
+    {
+        return $this->resizePreset($url, 'ai_hires');
+    }
+
+    /**
+     * Returns the imgProxy IIIF Image API v3 base URL for any source image.
+     *
+     * Append standard IIIF path segments to get any size:
+     *   {iiifBase}/full/!512,512/0/default.webp   → thumbnail
+     *   {iiifBase}/full/max/0/default.jpg          → original
+     *
+     * This lets non-IIIF sources (e.g. Fortepan) participate in the same
+     * consistent URL scheme as native IIIF collections.
+     */
+    public function iiifBase(string $sourceUrl): string
+    {
+        if (!$this->host || $this->host === '') {
+            throw new \RuntimeException('imgproxy host is not configured. Set the IMGPROXY_HOST environment variable.');
+        }
+
+        $encoded = rtrim(strtr(base64_encode($sourceUrl), '+/', '-_'), '=');
+        $path    = '/iiif3/' . $encoded;
+
+        return rtrim($this->host, '/') . '/' . $this->sign($path) . $path;
     }
 
     /**

@@ -57,8 +57,6 @@ export default class extends Controller {
             return;
         }
 
-        console.log('imgproxy final URL', finalUrl);
-
         element.src = finalUrl;
         const link = element.closest('a');
         if (link) {

@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Survos\ImgproxyBundle;
 
-use Survos\CoreBundle\Bundle\AssetMapperBundle;
-use Survos\CoreBundle\Traits\HasConfigurableRoutes;
-use Survos\ImgproxyBundle\Command\ImgproxyUrlCommand;
-use Survos\ImgproxyBundle\Controller\ImgproxyController;
+use Survos\Kit\AbstractUxBundle;
+use Survos\Kit\SurvosKitBundle;
+use Survos\Kit\Traits\HasConfigurableRoutes;
 use Survos\ImgproxyBundle\Service\ImgproxyUrlBuilder;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Kernel\RequiredBundle;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
-final class SurvosImgproxyBundle extends AssetMapperBundle
+#[RequiredBundle(SurvosKitBundle::class)]
+final class SurvosImgproxyBundle extends AbstractUxBundle
 {
     use HasConfigurableRoutes;
 
@@ -54,6 +55,8 @@ final class SurvosImgproxyBundle extends AssetMapperBundle
 
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
+        parent::loadExtension($config, $container, $builder);
+
         $this->captureRouteConfig($config);
         $this->registerRouteLoader($builder);
 
@@ -65,30 +68,6 @@ final class SurvosImgproxyBundle extends AssetMapperBundle
             ->arg('$presets', $config['presets'])
             ->public()
             ->autoconfigure();
-
-        $container->services()
-            ->set(ImgproxyUrlCommand::class)
-            ->autowire()
-            ->autoconfigure();
-
-        $container->services()
-            ->set(ImgproxyController::class)
-            ->autowire()
-            ->autoconfigure()
-            ->tag('controller.service_arguments');
-    }
-
-    public function prependExtension(ContainerConfigurator $container, ContainerBuilder $builder): void
-    {
-        parent::prependExtension($container, $builder);
-
-        if ($builder->hasExtension('twig')) {
-            $builder->prependExtensionConfig('twig', [
-                'paths' => [
-                    \dirname(__DIR__) . '/templates' => 'SurvosImgproxy',
-                ],
-            ]);
-        }
     }
 
     public function build(ContainerBuilder $container): void

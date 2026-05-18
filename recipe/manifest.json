@@ -1,0 +1,8 @@
+{
+    "bundles": {
+        "Survos\\ImgproxyBundle\\SurvosImgproxyBundle": ["all"]
+    },
+    "copy-from-recipe": {
+        "config/": "%CONFIG_DIR%/"
+    }
+}

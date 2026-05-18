@@ -16,11 +16,11 @@
     },
     "require": {
         "php": "^8.4",
-        "symfony/config": "^8.0",
-        "symfony/console": "^8.0",
-        "symfony/dependency-injection": "^8.0",
-        "symfony/http-kernel": "^8.0",
-        "survos/core-bundle": "^2.0",
+        "symfony/config": "^8.1",
+        "symfony/console": "^8.1",
+        "symfony/dependency-injection": "^8.1",
+        "symfony/http-kernel": "^8.1",
+        "survos/kit-bundle": "^2.0",
         "twig/twig": "^3.14"
     },
     "require-dev": {
@@ -29,7 +29,7 @@
     },
     "extra": {
         "symfony": {
-            "require": "^8.0"
+            "require": "^8.1"
         }
     }
 }

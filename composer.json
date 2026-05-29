@@ -20,7 +20,7 @@
         "symfony/console": "^8.1",
         "symfony/dependency-injection": "^8.1",
         "symfony/http-kernel": "^8.1",
-        "survos/kit-bundle": "^2.0",
+        "survos/kit-bundle": "^2.5",
         "twig/twig": "^3.14"
     },
     "require-dev": {

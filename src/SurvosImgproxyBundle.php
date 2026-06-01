@@ -13,6 +13,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Kernel\RequiredBundle;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+
 #[RequiredBundle(SurvosKitBundle::class)]
 final class SurvosImgproxyBundle extends AbstractUxBundle
 {
@@ -66,6 +68,7 @@ final class SurvosImgproxyBundle extends AbstractUxBundle
             ->arg('$key', $config['key'])
             ->arg('$salt', $config['salt'])
             ->arg('$presets', $config['presets'])
+            ->arg('$httpClient', service('http_client')->nullOnInvalid())
             ->public()
             ->autoconfigure();
     }

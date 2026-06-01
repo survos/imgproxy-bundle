@@ -26,4 +26,19 @@ final class ImgproxyController extends AbstractController
             'url' => $this->imgproxyUrlBuilder->resizePreset($url, $preset, 'jpg'),
         ]);
     }
+
+    /**
+     * Fetch image metadata from imgproxy's PRO /info endpoint.
+     *
+     *   GET /imgproxy/info?url=…&opts[]=dimensions&opts[]=classify_objects:5
+     *
+     * @param list<string> $opts
+     */
+    #[Route('/imgproxy/info', name: 'survos_imgproxy_info', methods: ['GET'])]
+    public function info(
+        #[MapQueryParameter] string $url,
+        #[MapQueryParameter] array $opts = [],
+    ): JsonResponse {
+        return $this->json($this->imgproxyUrlBuilder->info($url, $opts ?: ['size', 'format', 'dimensions']));
+    }
 }

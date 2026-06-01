@@ -6,15 +6,39 @@ namespace Survos\ImgproxyBundle\Service;
 
 use InvalidArgumentException;
 use Survos\ImgproxyBundle\SurvosImgproxyBundle;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Twig\Attribute\AsTwigFilter;
 
 final class ImgproxyUrlBuilder
 {
+    /**
+     * Friendly info-option names mapped to imgproxy's short option names.
+     * Anything not listed here is passed through verbatim.
+     *
+     * @see https://docs.imgproxy.net/usage/getting_info
+     */
+    private const INFO_ALIASES = [
+        'blurhash'        => 'bh',
+        'thumb_hash'      => 'th',
+        'average'         => 'avg',
+        'dominant_colors' => 'dc',
+        'detect_objects'  => 'do',
+        // imgproxy's option is `classify` (short `cl`); accept the longer alias too.
+        'classify_objects' => 'classify',
+        'video_meta'      => 'vm',
+        'colorspace'      => 'cs',
+        'pages_number'    => 'pn',
+        'sample_format'   => 'sf',
+        'perceptual_hash' => 'phash',
+        'calc_hashsums'   => 'chs',
+    ];
+
     public function __construct(
         public readonly ?string $host = null,
         private readonly ?string $key = null,
         private readonly ?string $salt = null,
         private readonly array $presets = SurvosImgproxyBundle::DEFAULT_PRESETS,
+        private readonly ?HttpClientInterface $httpClient = null,
     ) {
     }
 
@@ -25,13 +49,10 @@ final class ImgproxyUrlBuilder
         string $resizeType = 'fit',
         string $format = 'jpg',
     ): string {
-        if (!$this->host || $this->host === '') {
-            throw new \RuntimeException('imgproxy host is not configured. Set the IMGPROXY_HOST environment variable.');
-        }
+        $this->assertHost();
 
-        $encodedUrl = strtr($url, ['&' => '%26', '=' => '%3D', '?' => '%3F', '@' => '%40']);
         $options = sprintf('rs:%s:%d:%d:0', $resizeType, $width, $height);
-        $path = sprintf('/%s/plain/%s@%s', $options, $encodedUrl, $format);
+        $path = sprintf('/%s/plain/%s@%s', $options, $this->encodePlain($url), $format);
 
         return rtrim($this->host, '/') . '/' . $this->sign($path) . $path;
     }
@@ -75,12 +96,9 @@ final class ImgproxyUrlBuilder
      */
     public function iiifBase(string $sourceUrl): string
     {
-        if (!$this->host || $this->host === '') {
-            throw new \RuntimeException('imgproxy host is not configured. Set the IMGPROXY_HOST environment variable.');
-        }
+        $this->assertHost();
 
-        $encoded = rtrim(strtr(base64_encode($sourceUrl), '+/', '-_'), '=');
-        $path    = '/iiif3/' . $encoded;
+        $path = '/iiif3/' . $this->encodeBase64Source($sourceUrl);
 
         return rtrim($this->host, '/') . '/' . $this->sign($path) . $path;
     }
@@ -91,14 +109,77 @@ final class ImgproxyUrlBuilder
      */
     public function buildUrl(string $url, string $processing): string
     {
-        if (!$this->host || $this->host === '') {
-            throw new \RuntimeException('imgproxy host is not configured. Set the IMGPROXY_HOST environment variable.');
-        }
+        $this->assertHost();
 
-        $encodedUrl = strtr($url, ['&' => '%26', '=' => '%3D', '?' => '%3F', '@' => '%40']);
-        $path = sprintf('/%s/plain/%s', trim($processing, '/'), $encodedUrl);
+        $path = sprintf('/%s/plain/%s', trim($processing, '/'), $this->encodePlain($url));
 
         return rtrim($this->host, '/') . '/' . $this->sign($path) . $path;
+    }
+
+    /**
+     * Build a signed URL for imgproxy's PRO /info endpoint.
+     *
+     * The signature, salt, and HMAC construction are identical to processing
+     * URLs — only the URL shape differs: the `/info` prefix sits *outside* the
+     * signed portion, which is `/{options}/{base64_source}`.
+     *
+     *   {host}/info/{signature}/{options}/{base64url_source}
+     *
+     * NOTE: the /info endpoint requires the **base64url-encoded** source URL.
+     * Unlike the processing endpoint, it rejects the `plain/` form with a
+     * "404 Invalid URL" — verified against imgproxy PRO v4.0.3.
+     *
+     * @param array<int|string, mixed>|string $options info options — see buildInfoOptions()
+     * @see https://docs.imgproxy.net/usage/getting_info
+     */
+    public function infoUrl(string $url, array|string $options = []): string
+    {
+        $this->assertHost();
+
+        $opts = $this->buildInfoOptions($options);
+        $path = ($opts === '' ? '' : '/' . $opts) . '/' . $this->encodeBase64Source($url);
+
+        return rtrim($this->host, '/') . '/info/' . $this->sign($path) . $path;
+    }
+
+    /**
+     * Fetch and decode image metadata from the PRO /info endpoint.
+     *
+     * @param array<int|string, mixed>|string $options info options — see buildInfoOptions()
+     * @return array<string, mixed> decoded JSON (e.g. width, height, format, size, objects, …)
+     */
+    public function info(string $url, array|string $options = []): array
+    {
+        if (!$this->httpClient instanceof HttpClientInterface) {
+            throw new \RuntimeException('imgproxy info() requires an HTTP client. Ensure symfony/http-client is installed and the service is autowired.');
+        }
+
+        return $this->httpClient->request('GET', $this->infoUrl($url, $options))->toArray();
+    }
+
+    /**
+     * Run imgproxy's PRO image classification on a source image.
+     *
+     * @param int           $topK    number of classes to return (top-K by confidence)
+     * @param array<string> $classes optional whitelist of classes; empty = all trained classes
+     * @return array<string, mixed> decoded /info response including the classification list
+     * @see https://docs.imgproxy.net/usage/getting_info
+     */
+    public function classify(string $url, int $topK = 5, array $classes = []): array
+    {
+        $token = 'classify:' . implode(':', [$topK, ...$classes]);
+
+        return $this->info($url, [$token]);
+    }
+
+    /**
+     * Run imgproxy's PRO object detection on a source image.
+     *
+     * @return array<string, mixed> decoded /info response including detected objects + coordinates
+     */
+    public function detectObjects(string $url): array
+    {
+        return $this->info($url, ['detect_objects:1']);
     }
 
     public function hasPreset(string $preset): bool
@@ -109,6 +190,79 @@ final class ImgproxyUrlBuilder
     public function getPresets(): array
     {
         return $this->presets;
+    }
+
+    private function assertHost(): void
+    {
+        if (!$this->host || $this->host === '') {
+            throw new \RuntimeException('imgproxy host is not configured. Set the IMGPROXY_HOST environment variable.');
+        }
+    }
+
+    /**
+     * Escape a source URL for imgproxy's `plain/` segment. Non-http schemes
+     * (s3://, gs://, abs://, swift://) pass through unchanged — the `://` and
+     * key separators are left intact.
+     */
+    private function encodePlain(string $url): string
+    {
+        return strtr($url, ['&' => '%26', '=' => '%3D', '?' => '%3F', '@' => '%40']);
+    }
+
+    /**
+     * URL-safe base64 of a source URL, used by the /info endpoint and as the
+     * IIIF identifier. Padding stripped, `+/` mapped to `-_` per imgproxy.
+     */
+    private function encodeBase64Source(string $url): string
+    {
+        return rtrim(strtr(base64_encode($url), '+/', '-_'), '=');
+    }
+
+    /**
+     * Normalize info options into imgproxy's slash-joined option path.
+     *
+     * Accepts:
+     *  - a raw string, returned trimmed (e.g. "dimensions:1/bh:4:3")
+     *  - a list of raw tokens, passed through verbatim
+     *      ['dimensions', 'blurhash:4:3', 'classify_objects:5:cat:dog']
+     *  - key => value pairs, where bool true→":1", false→":0", scalars→":value"
+     *      ['palette' => 8, 'size' => true, 'detect_objects' => false]
+     *
+     * Friendly names (blurhash, average, detect_objects, …) are mapped to their
+     * imgproxy short names; unknown names pass through verbatim.
+     *
+     * @param array<int|string, mixed>|string $options
+     */
+    private function buildInfoOptions(array|string $options): string
+    {
+        if (is_string($options)) {
+            return trim($options, '/');
+        }
+
+        $tokens = [];
+        foreach ($options as $key => $value) {
+            if (is_int($key)) {
+                // raw token, e.g. "dimensions", "dimensions:1" or "classify:5:cat:dog".
+                // imgproxy requires the name:value form — a bare "dimensions" is NOT
+                // recognized as an option and gets folded into the base64 source URL,
+                // so valueless tokens get an implicit ":1".
+                $token = (string) $value;
+                [$name, $rest] = array_pad(explode(':', $token, 2), 2, null);
+                $tokens[] = (self::INFO_ALIASES[$name] ?? $name) . ':' . ($rest ?? '1');
+                continue;
+            }
+
+            $name = self::INFO_ALIASES[$key] ?? $key;
+            if (is_bool($value)) {
+                $tokens[] = $name . ':' . ($value ? '1' : '0');
+            } elseif (is_array($value)) {
+                $tokens[] = $name . ':' . implode(':', $value);
+            } else {
+                $tokens[] = $name . ':' . $value;
+            }
+        }
+
+        return implode('/', array_filter($tokens, static fn (string $t): bool => $t !== ''));
     }
 
     private function sign(string $path): string

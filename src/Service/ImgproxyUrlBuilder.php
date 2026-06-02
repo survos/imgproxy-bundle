@@ -57,16 +57,38 @@ final class ImgproxyUrlBuilder
         return rtrim($this->host, '/') . '/' . $this->sign($path) . $path;
     }
 
+    /**
+     * Build a signed URL from a named preset, expanding its size/quality/format
+     * inline:
+     *
+     *   {host}/{signature}/rs:fit:400:400:0:0/q:80/f:webp/plain/{source}
+     *
+     * Expanding client-side (rather than referencing a server-side `preset:NAME`)
+     * keeps the bundle self-contained — no imgproxy server preset config is
+     * required. Because every caller of a given preset emits a byte-identical
+     * processing string, the imgproxy/S3 cache stays hot. Pass $format to
+     * override the preset's output format.
+     */
     #[AsTwigFilter('imgproxy')]
-    public function resizePreset(string $url, string $preset = 'thumb', string $format = 'jpg'): string
+    public function resizePreset(string $url, string $preset = 'thumb', ?string $format = null): string
     {
         if (!isset($this->presets[$preset])) {
             throw new InvalidArgumentException(sprintf('Unknown imgproxy preset "%s". Available: %s', $preset, implode(', ', array_keys($this->presets))));
         }
 
+        $this->assertHost();
+
         $p = $this->presets[$preset];
 
-        return $this->resize($url, $p['width'], $p['height'], $p['resize'], $format);
+        $options = sprintf('rs:%s:%d:%d:0:0', $p['resize'] ?? 'fit', $p['width'], $p['height']);
+        if (!empty($p['quality'])) {
+            $options .= sprintf('/q:%d', $p['quality']);
+        }
+        $options .= sprintf('/f:%s', $format ?? $p['format'] ?? 'jpg');
+
+        $path = sprintf('/%s/plain/%s', $options, $this->encodePlain($url));
+
+        return rtrim($this->host, '/') . '/' . $this->sign($path) . $path;
     }
 
     public function thumbnail(string $url, int $size = 512): string
@@ -76,12 +98,12 @@ final class ImgproxyUrlBuilder
 
     public function aiThumbnail(string $url): string
     {
-        return $this->resizePreset($url, 'ai_thumbnail');
+        return $this->resizePreset($url, 'observe');
     }
 
     public function aiHires(string $url): string
     {
-        return $this->resizePreset($url, 'ai_hires');
+        return $this->resizePreset($url, 'archive');
     }
 
     /**

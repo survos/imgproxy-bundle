@@ -1,11 +1,10 @@
+// Kept in sync with SurvosImgproxyBundle::DEFAULT_PRESETS.
 const DEFAULT_PRESETS = {
-    ai: { width: 512, height: 512, resize: 'fit' },
-    ai_thumbnail: { width: 512, height: 512, resize: 'fit' },
-    ai_hires: { width: 2048, height: 2048, resize: 'fit' },
-    thumb: { width: 300, height: 300, resize: 'fit' },
-    small: { width: 192, height: 192, resize: 'fit' },
-    medium: { width: 600, height: 400, resize: 'fit' },
-    large: { width: 1600, height: 1600, resize: 'fit' },
+    tiny:    { width: 200,  height: 200,  resize: 'fit', quality: 70, format: 'webp' },
+    thumb:   { width: 400,  height: 400,  resize: 'fit', quality: 80, format: 'webp' },
+    observe: { width: 512,  height: 512,  resize: 'fit', quality: 80, format: 'webp' },
+    display: { width: 600,  height: 400,  resize: 'fit', quality: 80, format: 'webp' },
+    archive: { width: 3000, height: 3000, resize: 'fit', quality: 88, format: 'webp' },
 };
 
 export function imgproxyUrl(sourceUrl, options = {}) {
@@ -23,13 +22,19 @@ export function imgproxyUrl(sourceUrl, options = {}) {
     const presets = { ...DEFAULT_PRESETS, ...(options.presets || {}) };
     const presetName = options.preset || 'thumb';
     const preset = presets[presetName] || presets.thumb;
-    const width = Number(options.width || preset.width || 300);
+    const width = Number(options.width || preset.width || 400);
     const height = Number(options.height || preset.height || width);
     const resize = options.resize || preset.resize || 'fit';
-    const format = options.format || preset.format || 'jpg';
-    const processing = `rs:${resize}:${width}:${height}:0`;
+    const format = options.format || preset.format || 'webp';
+    const quality = Number(options.quality || preset.quality || 0);
 
-    return `${host}/insecure/${processing}/plain/${encodePlainSource(source)}@${format}`;
+    let processing = `rs:${resize}:${width}:${height}:0:0`;
+    if (quality) {
+        processing += `/q:${quality}`;
+    }
+    processing += `/f:${format}`;
+
+    return `${host}/insecure/${processing}/plain/${encodePlainSource(source)}`;
 }
 
 function encodePlainSource(sourceUrl) {

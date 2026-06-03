@@ -20,10 +20,10 @@ final class ImgproxyController extends AbstractController
     #[Route('/imgproxy/url', name: 'survos_imgproxy_url', methods: ['GET'])]
     public function url(
         #[MapQueryParameter] string $url,
-        #[MapQueryParameter] string $preset = 'ai_thumbnail',
+        #[MapQueryParameter] string $preset = 'observe',
     ): JsonResponse {
         return $this->json([
-            'url' => $this->imgproxyUrlBuilder->resizePreset($url, $preset, 'jpg'),
+            'url' => $this->imgproxyUrlBuilder->resizePreset($url, $preset),
         ]);
     }
 

@@ -18,7 +18,7 @@ final class ImgproxyUrlCommand
     public function __invoke(
         SymfonyStyle $io,
         #[Argument('Source image URL')] string $url,
-        #[Argument('Preset name')] string $preset = 'ai',
+        #[Argument('Preset name')] string $preset = 'thumb',
     ): int {
         if (!$this->imgproxyUrlBuilder->hasPreset($preset)) {
             $io->error(sprintf(

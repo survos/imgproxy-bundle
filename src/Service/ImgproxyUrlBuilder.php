@@ -84,6 +84,10 @@ final class ImgproxyUrlBuilder
         if (!empty($p['quality'])) {
             $options .= sprintf('/q:%d', $p['quality']);
         }
+        // strip_metadata: null → imgproxy default; false → sm:0 (keep exif/iptc/xmp); true → sm:1
+        if (array_key_exists('strip_metadata', $p) && $p['strip_metadata'] !== null) {
+            $options .= sprintf('/sm:%d', $p['strip_metadata'] ? 1 : 0);
+        }
         $options .= sprintf('/f:%s', $format ?? $p['format'] ?? 'jpg');
 
         $path = sprintf('/%s/plain/%s', $options, $this->encodePlain($url));

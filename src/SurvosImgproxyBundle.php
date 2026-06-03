@@ -41,7 +41,10 @@ final class SurvosImgproxyBundle extends AbstractUxBundle
         'thumb'   => ['width' => 400,  'height' => 400,  'resize' => 'fit', 'quality' => 80, 'format' => 'webp'],
         'observe' => ['width' => 512,  'height' => 512,  'resize' => 'fit', 'quality' => 80, 'format' => 'webp'],
         'display' => ['width' => 600,  'height' => 400,  'resize' => 'fit', 'quality' => 80, 'format' => 'webp'],
-        'archive' => ['width' => 3000, 'height' => 3000, 'resize' => 'fit', 'quality' => 88, 'format' => 'webp'],
+        // archive keeps metadata (strip_metadata:false → sm:0) so a single
+        // cached 3000px derivative can answer downstream /info calls (exif,
+        // iptc, xmp) without re-fetching the origin.
+        'archive' => ['width' => 3000, 'height' => 3000, 'resize' => 'fit', 'quality' => 88, 'format' => 'webp', 'strip_metadata' => false],
     ];
 
     public function configure(DefinitionConfigurator $definition): void
@@ -63,6 +66,8 @@ final class SurvosImgproxyBundle extends AbstractUxBundle
                             ->scalarNode('resize')->defaultValue('fit')->end()
                             ->integerNode('quality')->defaultNull()->end()
                             ->scalarNode('format')->defaultNull()->end()
+                            // null = leave to imgproxy default; false = keep metadata (sm:0); true = strip (sm:1)
+                            ->booleanNode('strip_metadata')->defaultNull()->end()
                         ->end()
                     ->end()
                 ->end()

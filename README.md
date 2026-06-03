@@ -213,13 +213,22 @@ If the entity does not implement this interface, the workflow falls back to the 
 
 ## Presets
 
-| Preset   | Width | Height | Use case                        |
-|----------|-------|--------|---------------------------------|
-| `ai`     | 512   | 512    | AI vision (GPT-4o, Claude, etc) |
-| `thumb`  | 300   | 300    | UI thumbnails                   |
-| `small`  | 192   | 192    | ThumbHash source, list views    |
-| `medium` | 600   | 400    | Content cards                   |
-| `large`  | 1200  | 800    | Hero images, lightbox           |
+| Preset    | Width | Height | Quality | Format | Use case                          |
+|-----------|-------|--------|---------|--------|-----------------------------------|
+| `tiny`    | 200   | 200    | 70      | webp   | Dense browsing grids, list views  |
+| `thumb`   | 400   | 400    | 80      | webp   | UI thumbnails / search hits       |
+| `observe` | 512   | 512    | 80      | webp   | AI vision (GPT-4o, Claude, etc)   |
+| `display` | 600   | 400    | 80      | webp   | Content cards, detail views       |
+| `archive` | 3000  | 3000   | 88      | webp   | Full-size / lightbox / archival   |
+
+Each preset is expanded inline into the imgproxy processing string
+(`rs:fit:W:H:0:0/q:Q/f:webp`), so no server-side imgproxy preset config is
+required. Because every caller of a given preset emits a byte-identical URL,
+the imgproxy/S3 cache stays hot.
+
+> These names mirror the presets defined on the imgproxy server. We may later
+> switch the builder to reference them by name (`preset:NAME`) once the
+> server-side set is finalized — keep the two in sync until then.
 
 ## Unsecured mode
 

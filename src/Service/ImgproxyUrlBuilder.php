@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Survos\ImgproxyBundle\Service;
 
 use InvalidArgumentException;
+use Survos\ImgproxyBundle\Dto\ImgproxyInfo;
 use Survos\ImgproxyBundle\SurvosImgproxyBundle;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Twig\Attribute\AsTwigFilter;
@@ -181,6 +182,16 @@ final class ImgproxyUrlBuilder
         }
 
         return $this->httpClient->request('GET', $this->infoUrl($url, $options))->toArray();
+    }
+
+    /**
+     * Fetch image metadata from /info and expose common fields as a typed DTO.
+     *
+     * @param array<int|string, mixed>|string $options info options — see buildInfoOptions()
+     */
+    public function infoDto(string $url, array|string $options = []): ImgproxyInfo
+    {
+        return ImgproxyInfo::fromArray($this->info($url, $options));
     }
 
     /**

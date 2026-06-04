@@ -98,6 +98,18 @@ $objects = $this->imgproxy->detectObjects($sourceUrl);
 $url = $this->imgproxy->infoUrl($sourceUrl, ['dimensions', 'blurhash:4:3']);
 ```
 
+`info()` returns the raw decoded imgproxy payload. Prefer `infoDto()` when application code needs a stable typed view:
+
+```php
+$info = $this->imgproxy->infoDto($sourceUrl, ['size', 'format', 'dimensions', 'exif', 'iptc', 'xmp']);
+$width = $info->width;
+$height = $info->height;
+$format = $info->iiifFormat(); // e.g. image/jpeg, image/webp
+$raw = $info->toArray(includeRaw: true);
+```
+
+The `/imgproxy/info` HTTP endpoint returns this DTO using Symfony 8.1 `#[Serialize]`, skipping null values and serializing common fields with imgproxy/IIIF-friendly names such as `mime_type`, `dominant_colors`, `aspect_ratio`, and `iiif_format`.
+
 `info()` / `classify()` / `detectObjects()` require an HTTP client (the bundle
 autowires `symfony/http-client`). `infoUrl()` only builds the signed URL and has
 no HTTP dependency. Note `classify`/`detect_objects` need the imgproxy PRO **ML**

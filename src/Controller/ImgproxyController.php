@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Survos\ImgproxyBundle\Controller;
 
+use Survos\ImgproxyBundle\Dto\ImgproxyInfo;
 use Survos\ImgproxyBundle\Service\ImgproxyUrlBuilder;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
+use Symfony\Component\HttpKernel\Attribute\Serialize;
+use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class ImgproxyController extends AbstractController
@@ -35,10 +38,11 @@ final class ImgproxyController extends AbstractController
      * @param list<string> $opts
      */
     #[Route('/imgproxy/info', name: 'survos_imgproxy_info', methods: ['GET'])]
+    #[Serialize(context: [AbstractObjectNormalizer::SKIP_NULL_VALUES => true])]
     public function info(
         #[MapQueryParameter] string $url,
         #[MapQueryParameter] array $opts = [],
-    ): JsonResponse {
-        return $this->json($this->imgproxyUrlBuilder->info($url, $opts ?: ['size', 'format', 'dimensions']));
+    ): ImgproxyInfo {
+        return $this->imgproxyUrlBuilder->infoDto($url, $opts ?: ['size', 'format', 'dimensions']);
     }
 }

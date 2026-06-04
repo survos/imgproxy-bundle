@@ -13,38 +13,17 @@ export default class extends Controller {
     };
 
     connect() {
-        console.error('hello from', this.identifier, this);
-        console.log('imgproxy connect', {
-            identifier: this.identifier,
-            host: this.hostValue || null,
-            preset: this.presetValue,
-            imageTargets: this.imageTargets.length,
-            urlTargets: this.urlTargets.length,
-        });
         this.element.dataset.imgproxyConnected = '1';
-
-        this.statusTargets.forEach((target) => {
-            target.textContent = `hello from ${this.identifier}; host=${this.hostValue || '(missing)'}; preset=${this.presetValue}`;
-        });
     }
 
     async imageTargetConnected(element) {
-        console.log('imgproxy image target connected', {
-            identifier: this.identifier,
-            element,
-            sourceUrl: this.sourceUrlFor(element),
-            host: element.dataset.imgproxyHost || this.hostValue || null,
-            preset: element.dataset.imgproxyPreset || element.dataset.preset || this.presetValue,
-        });
-
         if (element.dataset.imgproxyDone === '1') {
-            console.log('imgproxy image target skipped; already done', element);
             return;
         }
 
         const sourceUrl = this.sourceUrlFor(element);
         if (!sourceUrl) {
-            console.log('imgproxy image target skipped; no source URL', element);
+            this.displayStatusForImage(element, 'Missing source URL');
             return;
         }
 
@@ -52,8 +31,8 @@ export default class extends Controller {
         try {
             finalUrl = await this.finalUrlFor(element, sourceUrl);
         } catch (error) {
-            console.error('imgproxy final URL failed', error);
             this.displayUrlForImage(element, String(error));
+            this.displayStatusForImage(element, String(error));
             return;
         }
 
@@ -73,11 +52,6 @@ export default class extends Controller {
     }
 
     urlTargetConnected(element) {
-        console.log('imgproxy url target connected', {
-            identifier: this.identifier,
-            element,
-        });
-
         const item = element.closest('[data-imgproxy-item]');
         const image = item?.querySelector(`[data-${this.identifier}-target~="image"]`);
         const finalUrl = image?.dataset.imgproxyFinalUrl || image?.getAttribute('src') || '';
@@ -134,4 +108,16 @@ export default class extends Controller {
             target.textContent = finalUrl;
         }
     }
+
+    displayStatusForImage(image, message) {
+        const item = image.closest('[data-imgproxy-item]');
+        const targets = item
+            ? this.statusTargets.filter((statusTarget) => item.contains(statusTarget))
+            : this.statusTargets;
+
+        targets.forEach((target) => {
+            target.textContent = message;
+        });
+    }
 }
+

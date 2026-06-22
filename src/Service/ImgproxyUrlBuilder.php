@@ -144,6 +144,28 @@ final class ImgproxyUrlBuilder
     }
 
     /**
+     * The inverse of the "plain" builders: recover the original source URL from an imgproxy URL
+     * (`…/{options}/plain/{source}[@ext]`). Returns the input unchanged if it isn't a plain-mode
+     * imgproxy URL — so callers can safely pass any URL through it.
+     *
+     * Needed because consumers (mediary, the /info endpoint, AI tasks) fetch and process the
+     * SOURCE themselves; handing them an already-imgproxy'd URL double-processes and fails the fetch.
+     */
+    public function sourceUrl(string $url): string
+    {
+        $pos = strpos($url, '/plain/');
+        if ($pos === false) {
+            return $url;
+        }
+
+        $source = substr($url, $pos + strlen('/plain/'));
+        $source = preg_replace('/@[a-z0-9]+$/i', '', $source) ?? $source; // drop a trailing @webp/@jpg format hint
+        $source = strtr($source, ['%26' => '&', '%3D' => '=', '%3F' => '?', '%40' => '@']); // reverse encodePlain()
+
+        return str_starts_with($source, 'http') ? $source : $url;
+    }
+
+    /**
      * Build a signed URL for imgproxy's PRO /info endpoint.
      *
      * The signature, salt, and HMAC construction are identical to processing

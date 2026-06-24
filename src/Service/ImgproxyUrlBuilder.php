@@ -53,7 +53,8 @@ final class ImgproxyUrlBuilder
         $this->assertHost();
 
         $options = sprintf('rs:%s:%d:%d:0', $resizeType, $width, $height);
-        $path = sprintf('/%s/plain/%s@%s', $options, $this->encodePlain($url), $format);
+        //$path = sprintf('/%s/plain/%s@%s', $options, $this->encodePlain($url), $format);
+        $path = sprintf('/%s/%s@%s', $options, $this->encodeBase64Source($url), $format);
 
         return rtrim($this->host, '/') . '/' . $this->sign($path) . $path;
     }
@@ -91,7 +92,8 @@ final class ImgproxyUrlBuilder
         }
         $options .= sprintf('/f:%s', $format ?? $p['format'] ?? 'jpg');
 
-        $path = sprintf('/%s/plain/%s', $options, $this->encodePlain($url));
+        //$path = sprintf('/%s/plain/%s', $options, $this->encodePlain($url));
+        $path = sprintf('/%s/%s', $options, $this->encodeBase64Source($url));
 
         return rtrim($this->host, '/') . '/' . $this->sign($path) . $path;
     }
@@ -138,7 +140,8 @@ final class ImgproxyUrlBuilder
     {
         $this->assertHost();
 
-        $path = sprintf('/%s/plain/%s', trim($processing, '/'), $this->encodePlain($url));
+        //$path = sprintf('/%s/plain/%s', trim($processing, '/'), $this->encodePlain($url));
+        $path = sprintf('/%s/%s', trim($processing, '/'), $this->encodeBase64Source($url));
 
         return rtrim($this->host, '/') . '/' . $this->sign($path) . $path;
     }
@@ -265,7 +268,8 @@ final class ImgproxyUrlBuilder
      */
     private function encodePlain(string $url): string
     {
-        return strtr($url, ['&' => '%26', '=' => '%3D', '?' => '%3F', '@' => '%40']);
+        //return strtr($url, ['&' => '%26', '=' => '%3D', '?' => '%3F', '@' => '%40']);
+        return $url;
     }
 
     /**

@@ -37,9 +37,16 @@ export default class extends Controller {
         }
 
         element.src = finalUrl;
+        // Only fill in a placeholder href (missing or "#") — never clobber a real
+        // link. The image's closest <a> is often a navigation link to something
+        // else entirely (a detail page, a source citation); this controller's job
+        // is resolving the image, not deciding where clicks go.
         const link = element.closest('a');
         if (link) {
-            link.href = finalUrl;
+            const href = link.getAttribute('href');
+            if (!href || href === '#') {
+                link.href = finalUrl;
+            }
         }
         element.loading ||= 'lazy';
         element.dataset.imgproxyFinalUrl = finalUrl;

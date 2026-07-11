@@ -21,8 +21,6 @@ final class SurvosImgproxyBundle extends AbstractUxBundle
 {
     use HasConfigurableRoutes;
 
-    public const ASSET_PACKAGE = 'imgproxy';
-
     /**
      * Presets defined on the imgproxy server. The builder references these by
      * name (`preset:NAME`) so the server owns size/quality/format — every
@@ -35,17 +33,18 @@ final class SurvosImgproxyBundle extends AbstractUxBundle
      *   thumb=rs:fit:400:400:0:0/q:80/f:webp
      *   observe=rs:fit:512:512:0:0/q:80/f:webp
      *   display=rs:fit:600:400:0:0/q:80/f:webp
-     *   archive=rs:fit:3000:3000:0:0/q:88/f:webp
+     *   archive=rs:fit:0:0:0:0/q:88/f:webp
      */
     public const DEFAULT_PRESETS = [
         'tiny'    => ['width' => 200,  'height' => 200,  'resize' => 'fit', 'quality' => 70, 'format' => 'webp'],
         'thumb'   => ['width' => 400,  'height' => 400,  'resize' => 'fit', 'quality' => 80, 'format' => 'webp'],
         'observe' => ['width' => 512,  'height' => 512,  'resize' => 'fit', 'quality' => 80, 'format' => 'webp'],
         'display' => ['width' => 600,  'height' => 400,  'resize' => 'fit', 'quality' => 80, 'format' => 'webp'],
-        // archive keeps metadata (strip_metadata:false → sm:0) so a single
-        // cached 3000px derivative can answer downstream /info calls (exif,
-        // iptc, xmp) without re-fetching the origin.
-        'archive' => ['width' => 3000, 'height' => 3000, 'resize' => 'fit', 'quality' => 88, 'format' => 'webp', 'strip_metadata' => false],
+        // archive keeps metadata (strip_metadata:false → sm:0) and passes the source
+        // through at its original resolution (width/height:0 → imgproxy applies no
+        // resize step) so OSD's zoom viewer isn't capped below what the scan actually
+        // has — a single cached full-res derivative answers downstream /info calls too.
+        'archive' => ['width' => 0, 'height' => 0, 'resize' => 'fit', 'quality' => 88, 'format' => 'webp', 'strip_metadata' => false],
     ];
 
     public function configure(DefinitionConfigurator $definition): void

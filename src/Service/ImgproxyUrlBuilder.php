@@ -60,16 +60,28 @@ final class ImgproxyUrlBuilder
     }
 
     /**
-     * Build a signed URL from a named preset, expanding its size/quality/format
-     * inline:
+     * Build a signed URL that REFERENCES a server-side preset by name:
      *
-     *   {host}/{signature}/rs:fit:400:400:0:0/q:80/f:webp/plain/{source}
+     *   {host}/{signature}/pr:thumb/{base64 source}
      *
-     * Expanding client-side (rather than referencing a server-side `preset:NAME`)
-     * keeps the bundle self-contained — no imgproxy server preset config is
-     * required. Because every caller of a given preset emits a byte-identical
-     * processing string, the imgproxy/S3 cache stays hot. Pass $format to
-     * override the preset's output format.
+     * The server (IMGPROXY_PRESETS) owns the actual size/quality/format. This
+     * bundle only supplies the name.
+     *
+     * This used to expand the preset inline (rs:fit:400:400:0:0/q:80/f:webp) to
+     * keep the bundle self-contained. That produced FOUR copies of the same
+     * contract — IMGPROXY_PRESETS, this class, assets/lib/imgproxy_url.js, and
+     * media-bundle's own small/medium/large/ai vocabulary — which drift silently
+     * because a mismatch still renders, just at the wrong size. Referencing the
+     * preset collapses the first three into one. Output is byte-identical:
+     * pr:thumb and the expanded string both return the same 14654-byte webp.
+     *
+     * It also lets the server run with IMGPROXY_ONLY_PRESETS=true, which rejects
+     * ad-hoc processing options outright — so an arbitrary size becomes an error
+     * at the edge instead of an uncached full-price render.
+     *
+     * NOTE: the local preset list is now only used to validate the NAME. The
+     * width/height/quality/format values in it no longer affect the URL, and the
+     * server may define presets this list has never heard of.
      */
     #[AsTwigFilter('imgproxy')]
     public function resizePreset(string $url, string $preset = 'thumb', ?string $format = null): string
@@ -78,22 +90,21 @@ final class ImgproxyUrlBuilder
             throw new InvalidArgumentException(sprintf('Unknown imgproxy preset "%s". Available: %s', $preset, implode(', ', array_keys($this->presets))));
         }
 
+        // Deliberately fatal rather than ignored. Under IMGPROXY_ONLY_PRESETS the
+        // server refuses `pr:thumb/f:png`, so honouring this would emit a URL that
+        // 404s in production. Add a preset server-side instead.
+        if ($format !== null) {
+            throw new InvalidArgumentException(sprintf(
+                'Inline format override ("%s") is no longer supported: presets are resolved server-side, and IMGPROXY_ONLY_PRESETS rejects extra processing options. Define a "%s_%s" preset in IMGPROXY_PRESETS and reference that instead.',
+                $format,
+                $preset,
+                $format,
+            ));
+        }
+
         $this->assertHost();
 
-        $p = $this->presets[$preset];
-
-        $options = sprintf('rs:%s:%d:%d:0:0', $p['resize'] ?? 'fit', $p['width'], $p['height']);
-        if (!empty($p['quality'])) {
-            $options .= sprintf('/q:%d', $p['quality']);
-        }
-        // strip_metadata: null → imgproxy default; false → sm:0 (keep exif/iptc/xmp); true → sm:1
-        if (array_key_exists('strip_metadata', $p) && $p['strip_metadata'] !== null) {
-            $options .= sprintf('/sm:%d', $p['strip_metadata'] ? 1 : 0);
-        }
-        $options .= sprintf('/f:%s', $format ?? $p['format'] ?? 'jpg');
-
-        //$path = sprintf('/%s/plain/%s', $options, $this->encodePlain($url));
-        $path = sprintf('/%s/%s', $options, $this->encodeBase64Source($url));
+        $path = sprintf('/pr:%s/%s', $preset, $this->encodeBase64Source($url));
 
         return rtrim($this->host, '/') . '/' . $this->sign($path) . $path;
     }

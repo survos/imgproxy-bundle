@@ -23,6 +23,7 @@
         "symfony/http-client-contracts": "^3.5",
         "symfony/http-kernel": "^8.1",
         "symfony/serializer": "^8.1",
+        "symfony/ux-twig-component": "^3.0",
         "survos/kit-bundle": "^2.5",
         "twig/twig": "^3.14|^4.0"
     },

@@ -102,11 +102,54 @@ final class ImgproxyUrlBuilder
             ));
         }
 
+        if (null !== $flickr = self::flickrSize($url, $this->presets[$preset])) {
+            return $flickr;
+        }
+
         $this->assertHost();
 
         $path = sprintf('/pr:%s/%s', $preset, $this->encodeBase64Source($url));
 
         return rtrim($this->host, '/') . '/' . $this->sign($path) . $path;
+    }
+
+    /**
+     * Flickr already serves every size we need, and its edge intermittently answers imgproxy's
+     * fetches with 403 "Request forbidden by administrative rules" while plain curl from the same
+     * host gets 200 — a search page of Flickr hits came back almost all 403. So Flickr sources skip
+     * imgproxy: pick the smallest variant (same secret, so no API call) covering the preset's
+     * longest edge. Browsers load them directly; Flickr sends Access-Control-Allow-Origin: *.
+     *
+     * @param array{width: int, height: int} $preset
+     */
+    public static function flickrSize(string $url, array $preset): ?string
+    {
+        if (!preg_match('~^https?://(?:farm\d+|live)\.staticflickr\.com/(\d+)/(\d+)_([0-9a-f]+)(?:_([a-z]))?\.jpg$~i', $url, $m)) {
+            return null;
+        }
+
+        // longest edge => suffix; _h/_k/_o use a different secret, so 1024 is the ceiling here
+        $sizes = [240 => '_m', 320 => '_n', 500 => '', 640 => '_z', 800 => '_c', 1024 => '_b'];
+        // Flickr only makes sizes up to the upload (BL: ~14% stop below 1024), so never go above
+        // the source URL's own size; callers already hand us the largest that exists.
+        $own = strtolower($m[4] ?? '');
+        $max = ['s' => 75, 't' => 100, 'q' => 150, 'm' => 240, 'n' => 320, 'w' => 400, '' => 500, 'z' => 640, 'c' => 800][$own] ?? 1024;
+        $want = max($preset['width'], $preset['height']) ?: PHP_INT_MAX; // 0 = original size
+        $suffix = $own === '' ? '' : '_' . $own;
+        foreach ($sizes as $edge => $candidate) {
+            if ($edge > $max) {
+                break;
+            }
+            $suffix = $candidate;
+            if ($edge >= $want) {
+                break;
+            }
+        }
+        if ($max < 240) {
+            $suffix = '_' . $own; // smaller than every variant above
+        }
+
+        return sprintf('https://live.staticflickr.com/%s/%s_%s%s.jpg', $m[1], $m[2], $m[3], $suffix);
     }
 
     public function thumbnail(string $url, int $size = 512): string

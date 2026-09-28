@@ -35,6 +35,30 @@ final class ImgproxyUrlBuilderTest extends TestCase
         $builder->resizePreset('https://images.example/full.jpg', 'ai');
     }
 
+    public function testFlickrSourcesSkipImgproxyForTheirOwnSizeVariant(): void
+    {
+        $builder = new ImgproxyUrlBuilder(host: 'https://imgproxy.example');
+
+        self::assertSame(
+            'https://live.staticflickr.com/2837/11107699045_17cc133806.jpg',
+            $builder->resizePreset('https://farm3.staticflickr.com/2837/11107699045_17cc133806.jpg', 'thumb'),
+        );
+        self::assertSame(
+            'https://live.staticflickr.com/3770/11180647874_8044e64b3a_m.jpg',
+            $builder->resizePreset('https://farm4.staticflickr.com/3770/11180647874_8044e64b3a_b.jpg', 'tiny'),
+        );
+        self::assertSame(
+            'https://live.staticflickr.com/3770/11180647874_8044e64b3a_b.jpg',
+            $builder->resizePreset('https://farm4.staticflickr.com/3770/11180647874_8044e64b3a_b.jpg', 'archive'),
+        );
+        // never above the source: a 320 px upload has no _b
+        self::assertSame(
+            'https://live.staticflickr.com/3770/11180647874_8044e64b3a_n.jpg',
+            $builder->resizePreset('https://live.staticflickr.com/3770/11180647874_8044e64b3a_n.jpg', 'archive'),
+        );
+        self::assertNull(ImgproxyUrlBuilder::flickrSize('https://www.flickr.com/photos/britishlibrary/11107699045', ['width' => 400, 'height' => 400]));
+    }
+
     public function testInfoDtoMapsHttpResponseIntoTypedObject(): void
     {
         $client = new MockHttpClient([

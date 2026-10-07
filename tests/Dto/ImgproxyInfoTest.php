@@ -49,6 +49,23 @@ final class ImgproxyInfoTest extends TestCase
         self::assertSame('Example Credit', $info->embeddedMetadata->credit());
     }
 
+    public function testThumbHashHexIsNormalisedToBase64(): void
+    {
+        // imgproxy reports thumb_hash as hex; decoders want base64.
+        $info = ImgproxyInfo::fromArray([
+            'thumb_hash' => '1B080605807A6867C079899987A7688B0000000000',
+            'perceptual_hash' => 'c4c4e4f0f0e0c0c0',
+            'average' => ['R' => 108, 'G' => 108, 'B' => 255, 'A' => 255],
+        ]);
+
+        self::assertSame('GwgGBYB6aGfAeYmZh6doiwAAAAAA', $info->thumbHash);
+        self::assertSame('c4c4e4f0f0e0c0c0', $info->perceptualHash);
+        self::assertSame('#6c6cff', $info->averageHex());
+        self::assertSame('GwgGBYB6aGfAeYmZh6doiwAAAAAA', ImgproxyInfo::thumbHashBase64('GwgGBYB6aGfAeYmZh6doiwAAAAAA'), 'base64 passes through');
+        self::assertNull(ImgproxyInfo::thumbHashBase64(''));
+        self::assertSame('GwgGBYB6aGfAeYmZh6doiwAAAAAA', $info->normalized()['thumb_hash']);
+    }
+
     public function testIiifHelpersDeriveStableValues(): void
     {
         $info = ImgproxyInfo::fromArray([

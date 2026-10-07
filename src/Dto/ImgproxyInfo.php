@@ -36,6 +36,17 @@ final readonly class ImgproxyInfo
         public ?string $mimeType = null,
         public ?int $size = null,
         public ?string $blurhash = null,
+        /**
+         * ThumbHash, base64 — the form every decoder (JS, C#, PHP) takes.
+         *
+         * imgproxy reports it as hex (`thumb_hash: "1B0806…"`); normalised once here so no
+         * consumer has to know that. It was in every /info payload mediary stored and was
+         * never promoted, so nothing downstream could see it.
+         */
+        #[SerializedName('thumb_hash')]
+        public ?string $thumbHash = null,
+        #[SerializedName('perceptual_hash')]
+        public ?string $perceptualHash = null,
         public ?array $average = null,
         #[SerializedName('dominant_colors')]
         public array $dominantColors = [],
@@ -61,6 +72,8 @@ final readonly class ImgproxyInfo
             mimeType: self::stringOrNull($data['mime_type'] ?? $data['mimeType'] ?? null),
             size: self::intOrNull($data['size'] ?? null),
             blurhash: self::stringOrNull($data['blurhash'] ?? $data['bh'] ?? null),
+            thumbHash: self::thumbHashBase64($data['thumb_hash'] ?? $data['thumbhash'] ?? $data['th'] ?? null),
+            perceptualHash: self::stringOrNull($data['perceptual_hash'] ?? $data['ph'] ?? null),
             average: self::arrayOrNull($data['average'] ?? $data['avg'] ?? null),
             dominantColors: self::arrayOrEmpty($data['dominant_colors'] ?? $data['dc'] ?? null),
             palette: self::listOrEmpty($data['palette'] ?? null),
@@ -68,6 +81,41 @@ final readonly class ImgproxyInfo
             objects: self::listOrEmpty($data['objects'] ?? $data['detected_objects'] ?? $data['do'] ?? null),
             embeddedMetadata: ImgproxyEmbeddedMetadata::fromInfoArray($data),
         );
+    }
+
+    /**
+     * imgproxy's hex ThumbHash → base64. Already-base64 input passes through.
+     *
+     * Public because consumers that read the stored /info blob straight out of SQL (harvest's
+     * enrich, which cannot afford to hydrate ~2.5 KB of /info per page) need the same rule.
+     */
+    public static function thumbHashBase64(mixed $value): ?string
+    {
+        $value = self::stringOrNull($value);
+        if ($value === null) {
+            return null;
+        }
+        if (strlen($value) % 2 === 0 && ctype_xdigit($value) && ($bytes = hex2bin($value)) !== false) {
+            return base64_encode($bytes);
+        }
+
+        return $value;
+    }
+
+    /** "#rrggbb" from /info's `average` ({R,G,B,A}), the cheapest possible placeholder. */
+    public function averageHex(): ?string
+    {
+        return self::rgbHex($this->average);
+    }
+
+    /** @param array<string, mixed>|null $rgb */
+    public static function rgbHex(?array $rgb): ?string
+    {
+        if (!isset($rgb['R'], $rgb['G'], $rgb['B'])) {
+            return null;
+        }
+
+        return sprintf('#%02x%02x%02x', (int) $rgb['R'], (int) $rgb['G'], (int) $rgb['B']);
     }
 
     public function aspectRatio(): ?float
@@ -123,6 +171,8 @@ final readonly class ImgproxyInfo
             'mime_type' => $this->mimeType,
             'size' => $this->size,
             'blurhash' => $this->blurhash,
+            'thumb_hash' => $this->thumbHash,
+            'perceptual_hash' => $this->perceptualHash,
             'average' => $this->average,
             'dominant_colors' => $this->dominantColors ?: null,
             'palette' => $this->palette ?: null,

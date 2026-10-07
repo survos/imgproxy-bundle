@@ -36,6 +36,9 @@ final class SurvosImgproxyBundle extends AbstractUxBundle
      *   archive=rs:fit:0:0:0:0/q:88/f:webp
      */
     public const DEFAULT_PRESETS = [
+        // Unity's runtime decodes JPEG, not WebP. Deploy matching IMGPROXY_PRESETS on the server.
+        'thumb_jpg' => ['width' => 300, 'height' => 300, 'resize' => 'fit', 'quality' => 80, 'format' => 'jpg'],
+        'medium_jpg' => ['width' => 400, 'height' => 400, 'resize' => 'fit', 'quality' => 80, 'format' => 'jpg'],
         'tiny'    => ['width' => 200,  'height' => 200,  'resize' => 'fit', 'quality' => 70, 'format' => 'webp'],
         'thumb'   => ['width' => 400,  'height' => 400,  'resize' => 'fit', 'quality' => 80, 'format' => 'webp'],
         'observe' => ['width' => 512,  'height' => 512,  'resize' => 'fit', 'quality' => 80, 'format' => 'webp'],

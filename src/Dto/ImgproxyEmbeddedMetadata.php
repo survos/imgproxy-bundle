@@ -40,7 +40,7 @@ final readonly class ImgproxyEmbeddedMetadata
     #[Ignore]
     public function isEmpty(): bool
     {
-        return $this->exif === [] && $this->iptc === [] && $this->xmp === [];
+        return [] === $this->exif && [] === $this->iptc && [] === $this->xmp;
     }
 
     public function copyright(): ?string
@@ -94,7 +94,7 @@ final readonly class ImgproxyEmbeddedMetadata
             'credit' => $this->credit(),
             'creator' => $this->creator(),
             'rights_uri' => $this->rightsUri(),
-        ], static fn (mixed $value): bool => $value !== null);
+        ], static fn (mixed $value): bool => null !== $value);
     }
 
     /** @return array<string, mixed> */
@@ -108,7 +108,7 @@ final readonly class ImgproxyEmbeddedMetadata
             $data['xmp'] = $this->xmp;
         }
 
-        return array_filter($data, static fn (mixed $value): bool => $value !== [] && $value !== null);
+        return array_filter($data, static fn (mixed $value): bool => [] !== $value && null !== $value);
     }
 
     /** @return array{exif: array<string, mixed>, iptc: array<string, mixed>, xmp: array<string, mixed>} */
@@ -135,7 +135,7 @@ final readonly class ImgproxyEmbeddedMetadata
             }
 
             $value = trim((string) $value);
-            if ($value !== '') {
+            if ('' !== $value) {
                 return $value;
             }
         }
@@ -148,7 +148,7 @@ final readonly class ImgproxyEmbeddedMetadata
     {
         foreach ($values as $value) {
             $value = $this->firstString([$value]);
-            if ($value !== null && filter_var($value, FILTER_VALIDATE_URL) !== false) {
+            if (null !== $value && false !== filter_var($value, FILTER_VALIDATE_URL)) {
                 return $value;
             }
         }

@@ -13,7 +13,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand('imgproxy:url', 'Generate a signed imgproxy URL for a source image')]
 final class ImgproxyUrlCommand
 {
-    public function __construct(private readonly ImgproxyUrlBuilder $imgproxyUrlBuilder) {}
+    public function __construct(private readonly ImgproxyUrlBuilder $imgproxyUrlBuilder)
+    {
+    }
 
     public function __invoke(
         SymfonyStyle $io,
@@ -26,6 +28,7 @@ final class ImgproxyUrlCommand
                 $preset,
                 implode(', ', array_keys($this->imgproxyUrlBuilder->getPresets())),
             ));
+
             return Command::FAILURE;
         }
 

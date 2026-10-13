@@ -55,7 +55,9 @@ final class ImgproxyInfoCommand
     /** Sample IIIF image used when no URL is supplied. */
     private const SAMPLE_URL = 'https://sammlung.belvedere.at/internal/media/downloaddispatcher/13323?download=/full/max/0/default.jpg';
 
-    public function __construct(private readonly ImgproxyUrlBuilder $imgproxyUrlBuilder) {}
+    public function __construct(private readonly ImgproxyUrlBuilder $imgproxyUrlBuilder)
+    {
+    }
 
     /**
      * @param list<string> $opt
@@ -75,11 +77,13 @@ final class ImgproxyInfoCommand
             $data = $this->imgproxyUrlBuilder->info($url, $options);
         } catch (\Throwable $e) {
             $io->error($e->getMessage());
+
             return Command::FAILURE;
         }
 
         if ($json) {
             $io->writeln(json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
             return Command::SUCCESS;
         }
 

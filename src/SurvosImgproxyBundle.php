@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Survos\ImgproxyBundle;
 
+use Survos\ImgproxyBundle\Service\ImgproxyUrlBuilder;
 use Survos\Kit\AbstractUxBundle;
 use Survos\Kit\SurvosKitBundle;
 use Survos\Kit\Traits\HasConfigurableRoutes;
-use Survos\ImgproxyBundle\Service\ImgproxyUrlBuilder;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Kernel\RequiredBundle;
@@ -36,8 +36,8 @@ final class SurvosImgproxyBundle extends AbstractUxBundle
      *   archive=rs:fit:0:0:0:0/q:88/f:webp
      */
     public const DEFAULT_PRESETS = [
-        'tiny'    => ['width' => 200,  'height' => 200,  'resize' => 'fit', 'quality' => 70, 'format' => 'webp'],
-        'thumb'   => ['width' => 400,  'height' => 400,  'resize' => 'fit', 'quality' => 80, 'format' => 'webp'],
+        'tiny' => ['width' => 200,  'height' => 200,  'resize' => 'fit', 'quality' => 70, 'format' => 'webp'],
+        'thumb' => ['width' => 400,  'height' => 400,  'resize' => 'fit', 'quality' => 80, 'format' => 'webp'],
         'observe' => ['width' => 512,  'height' => 512,  'resize' => 'fit', 'quality' => 80, 'format' => 'webp'],
         'display' => ['width' => 600,  'height' => 400,  'resize' => 'fit', 'quality' => 80, 'format' => 'webp'],
         // archive keeps metadata (strip_metadata:false → sm:0) and passes the source

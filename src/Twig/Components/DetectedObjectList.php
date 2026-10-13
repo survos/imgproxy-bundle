@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Survos\ImgproxyBundle\Twig\Components;
@@ -61,7 +62,7 @@ final class DetectedObjectList
 
     public function hasBoxes(): bool
     {
-        return $this->groups() !== [];
+        return [] !== $this->groups();
     }
 
     /** Display width for a crop thumbnail, clamped to a sane range. */

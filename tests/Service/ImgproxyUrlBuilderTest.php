@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Survos\ImgproxyBundle\Tests\Service;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Survos\ImgproxyBundle\Dto\ImgproxyInfo;
 use Survos\ImgproxyBundle\Service\ImgproxyUrlBuilder;
@@ -29,7 +28,7 @@ final class ImgproxyUrlBuilderTest extends TestCase
     {
         $builder = new ImgproxyUrlBuilder(host: 'https://imgproxy.example');
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown imgproxy preset "ai"');
 
         $builder->resizePreset('https://images.example/full.jpg', 'ai');

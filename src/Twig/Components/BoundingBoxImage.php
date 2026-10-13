@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Survos\ImgproxyBundle\Twig\Components;
@@ -78,6 +79,6 @@ final class BoundingBoxImage
 
     public function hasBoxes(): bool
     {
-        return $this->rects() !== [];
+        return [] !== $this->rects();
     }
 }

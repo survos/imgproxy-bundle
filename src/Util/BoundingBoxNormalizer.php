@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Survos\ImgproxyBundle\Util;
@@ -24,7 +25,7 @@ namespace Survos\ImgproxyBundle\Util;
 final class BoundingBoxNormalizer
 {
     /**
-     * @param array<int, array<string, mixed>>     $boxes
+     * @param array<int, array<string, mixed>>                  $boxes
      * @param array{width?: int|float, height?: int|float}|null $coordinateSpace
      *
      * @return list<array{
@@ -74,7 +75,7 @@ final class BoundingBoxNormalizer
             }
 
             $label = $box['label'] ?? $box['class_name'] ?? $box['class'] ?? null;
-            $label = is_string($label) && trim($label) !== '' ? trim($label) : null;
+            $label = is_string($label) && '' !== trim($label) ? trim($label) : null;
 
             $confidence = $box['confidence'] ?? null;
             $confidence = is_numeric($confidence) ? (float) $confidence : null;
@@ -88,9 +89,9 @@ final class BoundingBoxNormalizer
                 'height' => round($height * 100, 3),
                 'label' => $label,
                 'confidence' => $confidence,
-                'confPct' => $confidence !== null ? (int) round($confidence * 100) : null,
+                'confPct' => null !== $confidence ? (int) round($confidence * 100) : null,
                 'level' => $level,
-                'color' => $colorBy === 'class'
+                'color' => 'class' === $colorBy
                     ? self::classColor($label, $i)
                     : self::levelColor($level),
                 'crop' => self::crop($left, $top, $width, $height, $imageWidth, $imageHeight),
@@ -105,6 +106,7 @@ final class BoundingBoxNormalizer
      * group highest-confidence first.
      *
      * @param list<array<string, mixed>> $rects
+     *
      * @return list<array{label: string, count: int, items: list<array<string, mixed>>}>
      */
     public static function group(array $rects): array
@@ -128,7 +130,7 @@ final class BoundingBoxNormalizer
 
     private static function level(?float $confidence): string
     {
-        if ($confidence === null) {
+        if (null === $confidence) {
             return 'unknown';
         }
 
@@ -152,7 +154,7 @@ final class BoundingBoxNormalizer
 
     private static function classColor(?string $label, int $index): string
     {
-        $hue = $label !== null ? (int) (crc32($label) % 360) : ($index * 47 % 360);
+        $hue = null !== $label ? (int) (crc32($label) % 360) : ($index * 47 % 360);
 
         return sprintf('hsl(%d, 70%%, 45%%)', $hue);
     }
@@ -178,8 +180,8 @@ final class BoundingBoxNormalizer
             : ($h > 0 ? $w / $h : 1.0);
 
         return [
-            'size' => round($sizeX, 3) . '% ' . round($sizeY, 3) . '%',
-            'pos' => round($posX, 3) . '% ' . round($posY, 3) . '%',
+            'size' => round($sizeX, 3).'% '.round($sizeY, 3).'%',
+            'pos' => round($posX, 3).'% '.round($posY, 3).'%',
             'aspect' => round($aspect, 4) ?: 1.0,
         ];
     }

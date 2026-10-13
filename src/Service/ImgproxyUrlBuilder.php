@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Survos\ImgproxyBundle\Service;
 
-use InvalidArgumentException;
 use Survos\ImgproxyBundle\Dto\ImgproxyInfo;
 use Survos\ImgproxyBundle\SurvosImgproxyBundle;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -19,19 +18,19 @@ final class ImgproxyUrlBuilder
      * @see https://docs.imgproxy.net/usage/getting_info
      */
     private const INFO_ALIASES = [
-        'blurhash'        => 'bh',
-        'thumb_hash'      => 'th',
-        'average'         => 'avg',
+        'blurhash' => 'bh',
+        'thumb_hash' => 'th',
+        'average' => 'avg',
         'dominant_colors' => 'dc',
-        'detect_objects'  => 'do',
+        'detect_objects' => 'do',
         // imgproxy's option is `classify` (short `cl`); accept the longer alias too.
         'classify_objects' => 'classify',
-        'video_meta'      => 'vm',
-        'colorspace'      => 'cs',
-        'pages_number'    => 'pn',
-        'sample_format'   => 'sf',
+        'video_meta' => 'vm',
+        'colorspace' => 'cs',
+        'pages_number' => 'pn',
+        'sample_format' => 'sf',
         'perceptual_hash' => 'phash',
-        'calc_hashsums'   => 'chs',
+        'calc_hashsums' => 'chs',
     ];
 
     public function __construct(
@@ -45,18 +44,18 @@ final class ImgproxyUrlBuilder
 
     public function resize(
         string $url,
-        int    $width,
-        int    $height,
+        int $width,
+        int $height,
         string $resizeType = 'fit',
         string $format = 'jpg',
     ): string {
         $this->assertHost();
 
         $options = sprintf('rs:%s:%d:%d:0', $resizeType, $width, $height);
-        //$path = sprintf('/%s/plain/%s@%s', $options, $this->encodePlain($url), $format);
+        // $path = sprintf('/%s/plain/%s@%s', $options, $this->encodePlain($url), $format);
         $path = sprintf('/%s/%s@%s', $options, $this->encodeBase64Source($url), $format);
 
-        return rtrim($this->host, '/') . '/' . $this->sign($path) . $path;
+        return rtrim($this->host, '/').'/'.$this->sign($path).$path;
     }
 
     /**
@@ -87,19 +86,14 @@ final class ImgproxyUrlBuilder
     public function resizePreset(string $url, string $preset = 'thumb', ?string $format = null): string
     {
         if (!isset($this->presets[$preset])) {
-            throw new InvalidArgumentException(sprintf('Unknown imgproxy preset "%s". Available: %s', $preset, implode(', ', array_keys($this->presets))));
+            throw new \InvalidArgumentException(sprintf('Unknown imgproxy preset "%s". Available: %s', $preset, implode(', ', array_keys($this->presets))));
         }
 
         // Deliberately fatal rather than ignored. Under IMGPROXY_ONLY_PRESETS the
         // server refuses `pr:thumb/f:png`, so honouring this would emit a URL that
         // 404s in production. Add a preset server-side instead.
-        if ($format !== null) {
-            throw new InvalidArgumentException(sprintf(
-                'Inline format override ("%s") is no longer supported: presets are resolved server-side, and IMGPROXY_ONLY_PRESETS rejects extra processing options. Define a "%s_%s" preset in IMGPROXY_PRESETS and reference that instead.',
-                $format,
-                $preset,
-                $format,
-            ));
+        if (null !== $format) {
+            throw new \InvalidArgumentException(sprintf('Inline format override ("%s") is no longer supported: presets are resolved server-side, and IMGPROXY_ONLY_PRESETS rejects extra processing options. Define a "%s_%s" preset in IMGPROXY_PRESETS and reference that instead.', $format, $preset, $format));
         }
 
         if (null !== $flickr = self::flickrSize($url, $this->presets[$preset])) {
@@ -110,7 +104,7 @@ final class ImgproxyUrlBuilder
 
         $path = sprintf('/pr:%s/%s', $preset, $this->encodeBase64Source($url));
 
-        return rtrim($this->host, '/') . '/' . $this->sign($path) . $path;
+        return rtrim($this->host, '/').'/'.$this->sign($path).$path;
     }
 
     /**
@@ -135,7 +129,7 @@ final class ImgproxyUrlBuilder
         $own = strtolower($m[4] ?? '');
         $max = ['s' => 75, 't' => 100, 'q' => 150, 'm' => 240, 'n' => 320, 'w' => 400, '' => 500, 'z' => 640, 'c' => 800][$own] ?? 1024;
         $want = max($preset['width'], $preset['height']) ?: PHP_INT_MAX; // 0 = original size
-        $suffix = $own === '' ? '' : '_' . $own;
+        $suffix = '' === $own ? '' : '_'.$own;
         foreach ($sizes as $edge => $candidate) {
             if ($edge > $max) {
                 break;
@@ -146,7 +140,7 @@ final class ImgproxyUrlBuilder
             }
         }
         if ($max < 240) {
-            $suffix = '_' . $own; // smaller than every variant above
+            $suffix = '_'.$own; // smaller than every variant above
         }
 
         return sprintf('https://live.staticflickr.com/%s/%s_%s%s.jpg', $m[1], $m[2], $m[3], $suffix);
@@ -181,9 +175,9 @@ final class ImgproxyUrlBuilder
     {
         $this->assertHost();
 
-        $path = '/iiif3/' . $this->encodeBase64Source($sourceUrl);
+        $path = '/iiif3/'.$this->encodeBase64Source($sourceUrl);
 
-        return rtrim($this->host, '/') . '/' . $this->sign($path) . $path;
+        return rtrim($this->host, '/').'/'.$this->sign($path).$path;
     }
 
     /**
@@ -194,10 +188,10 @@ final class ImgproxyUrlBuilder
     {
         $this->assertHost();
 
-        //$path = sprintf('/%s/plain/%s', trim($processing, '/'), $this->encodePlain($url));
+        // $path = sprintf('/%s/plain/%s', trim($processing, '/'), $this->encodePlain($url));
         $path = sprintf('/%s/%s', trim($processing, '/'), $this->encodeBase64Source($url));
 
-        return rtrim($this->host, '/') . '/' . $this->sign($path) . $path;
+        return rtrim($this->host, '/').'/'.$this->sign($path).$path;
     }
 
     /**
@@ -211,7 +205,7 @@ final class ImgproxyUrlBuilder
     public function sourceUrl(string $url): string
     {
         $pos = strpos($url, '/plain/');
-        if ($pos === false) {
+        if (false === $pos) {
             return $url;
         }
 
@@ -236,6 +230,7 @@ final class ImgproxyUrlBuilder
      * "404 Invalid URL" — verified against imgproxy PRO v4.0.3.
      *
      * @param array<int|string, mixed>|string $options info options — see buildInfoOptions()
+     *
      * @see https://docs.imgproxy.net/usage/getting_info
      */
     public function infoUrl(string $url, array|string $options = []): string
@@ -243,15 +238,16 @@ final class ImgproxyUrlBuilder
         $this->assertHost();
 
         $opts = $this->buildInfoOptions($options);
-        $path = ($opts === '' ? '' : '/' . $opts) . '/' . $this->encodeBase64Source($url);
+        $path = ('' === $opts ? '' : '/'.$opts).'/'.$this->encodeBase64Source($url);
 
-        return rtrim($this->host, '/') . '/info/' . $this->sign($path) . $path;
+        return rtrim($this->host, '/').'/info/'.$this->sign($path).$path;
     }
 
     /**
      * Fetch and decode image metadata from the PRO /info endpoint.
      *
      * @param array<int|string, mixed>|string $options info options — see buildInfoOptions()
+     *
      * @return array<string, mixed> decoded JSON (e.g. width, height, format, size, objects, …)
      */
     public function info(string $url, array|string $options = []): array
@@ -278,12 +274,14 @@ final class ImgproxyUrlBuilder
      *
      * @param int           $topK    number of classes to return (top-K by confidence)
      * @param array<string> $classes optional whitelist of classes; empty = all trained classes
+     *
      * @return array<string, mixed> decoded /info response including the classification list
+     *
      * @see https://docs.imgproxy.net/usage/getting_info
      */
     public function classify(string $url, int $topK = 5, array $classes = []): array
     {
-        $token = 'classify:' . implode(':', [$topK, ...$classes]);
+        $token = 'classify:'.implode(':', [$topK, ...$classes]);
 
         return $this->info($url, [$token]);
     }
@@ -310,7 +308,7 @@ final class ImgproxyUrlBuilder
 
     private function assertHost(): void
     {
-        if (!$this->host || $this->host === '') {
+        if (!$this->host || '' === $this->host) {
             throw new \RuntimeException('imgproxy host is not configured. Set the IMGPROXY_HOST environment variable.');
         }
     }
@@ -322,7 +320,7 @@ final class ImgproxyUrlBuilder
      */
     private function encodePlain(string $url): string
     {
-        //return strtr($url, ['&' => '%26', '=' => '%3D', '?' => '%3F', '@' => '%40']);
+        // return strtr($url, ['&' => '%26', '=' => '%3D', '?' => '%3F', '@' => '%40']);
         return $url;
     }
 
@@ -365,21 +363,21 @@ final class ImgproxyUrlBuilder
                 // so valueless tokens get an implicit ":1".
                 $token = (string) $value;
                 [$name, $rest] = array_pad(explode(':', $token, 2), 2, null);
-                $tokens[] = (self::INFO_ALIASES[$name] ?? $name) . ':' . ($rest ?? '1');
+                $tokens[] = (self::INFO_ALIASES[$name] ?? $name).':'.($rest ?? '1');
                 continue;
             }
 
             $name = self::INFO_ALIASES[$key] ?? $key;
             if (is_bool($value)) {
-                $tokens[] = $name . ':' . ($value ? '1' : '0');
+                $tokens[] = $name.':'.($value ? '1' : '0');
             } elseif (is_array($value)) {
-                $tokens[] = $name . ':' . implode(':', $value);
+                $tokens[] = $name.':'.implode(':', $value);
             } else {
-                $tokens[] = $name . ':' . $value;
+                $tokens[] = $name.':'.$value;
             }
         }
 
-        return implode('/', array_filter($tokens, static fn (string $t): bool => $t !== ''));
+        return implode('/', array_filter($tokens, static fn (string $t): bool => '' !== $t));
     }
 
     private function sign(string $path): string
@@ -390,7 +388,7 @@ final class ImgproxyUrlBuilder
 
         $digest = hash_hmac(
             'sha256',
-            pack('H*', $this->salt) . $path,
+            pack('H*', $this->salt).$path,
             pack('H*', $this->key),
             true,
         );

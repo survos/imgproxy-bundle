@@ -17,9 +17,6 @@ final readonly class ImgproxyInfo
 {
     /**
      * @param array<string, mixed> $raw
-     * @param array<string, mixed> $exif
-     * @param array<string, mixed> $iptc
-     * @param array<string, mixed> $xmp
      * @param array<string, mixed> $dominantColors
      * @param list<mixed>          $palette
      * @param list<mixed>          $classification
@@ -92,10 +89,10 @@ final readonly class ImgproxyInfo
     public static function thumbHashBase64(mixed $value): ?string
     {
         $value = self::stringOrNull($value);
-        if ($value === null) {
+        if (null === $value) {
             return null;
         }
-        if (strlen($value) % 2 === 0 && ctype_xdigit($value) && ($bytes = hex2bin($value)) !== false) {
+        if (0 === strlen($value) % 2 && ctype_xdigit($value) && ($bytes = hex2bin($value)) !== false) {
             return base64_encode($bytes);
         }
 
@@ -129,7 +126,7 @@ final readonly class ImgproxyInfo
 
     public function iiifFormat(): ?string
     {
-        if ($this->mimeType !== null && $this->mimeType !== '') {
+        if (null !== $this->mimeType && '' !== $this->mimeType) {
             return $this->mimeType;
         }
 
@@ -179,7 +176,7 @@ final readonly class ImgproxyInfo
             'classification' => $this->classification ?: null,
             'objects' => $this->objects ?: null,
             'embedded_metadata' => $this->embeddedMetadata->isEmpty() ? null : $this->embeddedMetadata->toArray(),
-        ], static fn (mixed $value): bool => $value !== null);
+        ], static fn (mixed $value): bool => null !== $value);
     }
 
     #[SerializedName('aspect_ratio')]
@@ -214,7 +211,7 @@ final readonly class ImgproxyInfo
 
     private static function intOrNull(mixed $value): ?int
     {
-        if ($value === null || $value === '') {
+        if (null === $value || '' === $value) {
             return null;
         }
 
@@ -229,7 +226,7 @@ final readonly class ImgproxyInfo
 
         $value = trim((string) $value);
 
-        return $value !== '' ? $value : null;
+        return '' !== $value ? $value : null;
     }
 
     /** @return array<string, mixed> */

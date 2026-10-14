@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Survos\ImgproxyBundle;
 
+use Survos\ImageContracts\ImageMetaProviderInterface;
+use Survos\ImageContracts\ImageUrlBuilderInterface;
 use Survos\ImgproxyBundle\Service\ImgproxyUrlBuilder;
 use Survos\Kit\AbstractUxBundle;
 use Survos\Kit\SurvosKitBundle;
@@ -90,6 +92,12 @@ final class SurvosImgproxyBundle extends AbstractUxBundle
             ->arg('$httpClient', service('http_client')->nullOnInvalid())
             ->public()
             ->autoconfigure();
+
+        // Backend-neutral injection points. With both imgproxy-bundle and imagor-bundle installed
+        // the later bundle in bundles.php wins; an app pins its choice by aliasing these in its
+        // own services.yaml, which always overrides a bundle's alias.
+        $container->services()->alias(ImageUrlBuilderInterface::class, ImgproxyUrlBuilder::class)->public();
+        $container->services()->alias(ImageMetaProviderInterface::class, ImgproxyUrlBuilder::class)->public();
     }
 
     public function build(ContainerBuilder $container): void

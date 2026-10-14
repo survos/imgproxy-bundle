@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Survos\ImgproxyBundle\Dto;
 
+use Survos\ImageContracts\ImageMeta;
 use Symfony\Component\Serializer\Attribute\Ignore;
 use Symfony\Component\Serializer\Attribute\SerializedName;
 
@@ -113,6 +114,19 @@ final readonly class ImgproxyInfo
         }
 
         return sprintf('#%02x%02x%02x', (int) $rgb['R'], (int) $rgb['G'], (int) $rgb['B']);
+    }
+
+    /** The backend-neutral subset ({@see \Survos\ImageContracts\ImageMetaProviderInterface}). */
+    public function toImageMeta(): ImageMeta
+    {
+        return new ImageMeta(
+            width: $this->width,
+            height: $this->height,
+            format: null === $this->format ? null : strtolower($this->format),
+            thumbhash: $this->thumbHash,
+            blurhash: $this->blurhash,
+            averageColor: $this->averageHex(),
+        );
     }
 
     public function aspectRatio(): ?float

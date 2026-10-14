@@ -24,12 +24,14 @@
         "symfony/http-kernel": "^8.1",
         "symfony/serializer": "^8.1",
         "symfony/ux-twig-component": "^3.0",
+        "survos/image-contracts": "^2.5",
         "survos/kit-bundle": "^2.5",
         "twig/twig": "^3.14|^4.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^13.0",
-        "symfony/framework-bundle": "^8.1"
+        "symfony/framework-bundle": "^8.1",
+        "symfony/twig-bundle": "^8.1"
     },
     "extra": {
         "symfony": {

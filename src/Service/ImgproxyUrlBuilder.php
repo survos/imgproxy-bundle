@@ -4,13 +4,23 @@ declare(strict_types=1);
 
 namespace Survos\ImgproxyBundle\Service;
 
+use Survos\ImageContracts\ImageMeta;
+use Survos\ImageContracts\ImageMetaProviderInterface;
+use Survos\ImageContracts\ImageUrlBuilderInterface;
 use Survos\ImgproxyBundle\Dto\ImgproxyInfo;
 use Survos\ImgproxyBundle\SurvosImgproxyBundle;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Twig\Attribute\AsTwigFilter;
 
-final class ImgproxyUrlBuilder
+final class ImgproxyUrlBuilder implements ImageUrlBuilderInterface, ImageMetaProviderInterface
 {
+    /**
+     * Schemes imgproxy fetches: http(s), plus object storage it resolves with its own credentials
+     * (IMGPROXY_USE_S3 / _GCS / _ABS / _SWIFT). Whether a given bucket is reachable is the server's
+     * business; the scheme is all the client can know.
+     */
+    public const FETCHABLE_SCHEMES = ['http', 'https', 's3', 'gs', 'abs', 'swift'];
+
     /**
      * Friendly info-option names mapped to imgproxy's short option names.
      * Anything not listed here is passed through verbatim.
@@ -84,6 +94,12 @@ final class ImgproxyUrlBuilder
      */
     #[AsTwigFilter('imgproxy')]
     public function resizePreset(string $url, string $preset = 'thumb', ?string $format = null): string
+    {
+        return $this->preset($url, $preset, $format);
+    }
+
+    /** {@see ImageUrlBuilderInterface::preset()}; resizePreset() and `|imgproxy` are the same call. */
+    public function preset(string $url, string $preset = 'thumb', ?string $format = null): string
     {
         if (!isset($this->presets[$preset])) {
             throw new \InvalidArgumentException(sprintf('Unknown imgproxy preset "%s". Available: %s', $preset, implode(', ', array_keys($this->presets))));
@@ -206,7 +222,7 @@ final class ImgproxyUrlBuilder
     {
         $pos = strpos($url, '/plain/');
         if (false === $pos) {
-            return $url;
+            return $this->base64SourceUrl($url) ?? $url;
         }
 
         $source = substr($url, $pos + strlen('/plain/'));
@@ -296,6 +312,32 @@ final class ImgproxyUrlBuilder
         return $this->info($url, ['detect_objects:1']);
     }
 
+    /**
+     * The common subset of /info (imgproxy PRO) as a backend-neutral DTO.
+     */
+    public function imageMeta(string $source): ImageMeta
+    {
+        return $this->infoDto($source, [
+            'format' => true,
+            'dimensions' => true,
+            'blurhash' => [4, 3],
+            'thumb_hash' => true,
+            'average' => true,
+        ])->toImageMeta();
+    }
+
+    public function isConfigured(): bool
+    {
+        return null !== $this->host && '' !== $this->host;
+    }
+
+    public function supports(string $source): bool
+    {
+        $scheme = strtolower((string) parse_url($source, PHP_URL_SCHEME));
+
+        return in_array($scheme, self::FETCHABLE_SCHEMES, true) && '' !== (string) parse_url($source, PHP_URL_HOST);
+    }
+
     public function hasPreset(string $preset): bool
     {
         return isset($this->presets[$preset]);
@@ -306,9 +348,25 @@ final class ImgproxyUrlBuilder
         return $this->presets;
     }
 
+    /**
+     * The source behind a base64-mode URL this builder made: {host}/{sig}/{options}/{base64}[@ext]
+     * (or …/info/…). Null when $url isn't on our host or its last segment doesn't decode to a URL.
+     */
+    private function base64SourceUrl(string $url): ?string
+    {
+        if (!$this->isConfigured() || !str_starts_with($url, rtrim((string) $this->host, '/').'/')) {
+            return null;
+        }
+        $last = basename((string) parse_url($url, PHP_URL_PATH));
+        $last = preg_replace('/@[a-z0-9]+$/i', '', $last) ?? $last;
+        $decoded = base64_decode(strtr($last, '-_', '+/'), true);
+
+        return false !== $decoded && $this->supports($decoded) ? $decoded : null;
+    }
+
     private function assertHost(): void
     {
-        if (!$this->host || '' === $this->host) {
+        if (!$this->isConfigured()) {
             throw new \RuntimeException('imgproxy host is not configured. Set the IMGPROXY_HOST environment variable.');
         }
     }
